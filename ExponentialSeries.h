@@ -3,9 +3,13 @@
 
 class ExponentialSeries {
 public:
+    /**
+     * FuncA calculates the exponential series.
+     * @param n: Number of terms to include in the series.
+     * @return: Sum of the series.
+     */
     ExponentialSeries();
-    double FuncA();
+    double FuncA(int n);
 };
 
 #endif
-
