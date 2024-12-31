@@ -1,32 +1,26 @@
-# Prerequisites
-*.d
+# Ignore IDE
+.idea
+.vscode
 
-# Compiled Object files
-*.slo
-*.lo
+# Ignore generated directories
+cmake-build-debug
+/build-aux/
+/autom4te.cache/
+.deps
+
+# Ignore generated files
+/Makefile.in
+/Makefile
+/aclocal.m4
+/config.log
+/config.status
+/configure
+/stamp-h1
+
+# Ignore object files, executables and libraries
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
+*.lo
 *.la
 *.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+*.so
+expSeries
