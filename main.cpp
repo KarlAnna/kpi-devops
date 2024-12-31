@@ -3,6 +3,6 @@
 
 int main() {
     ExponentialSeries exponentialSeries;
-    std::count << "Result: " << exponentialSeries.FuncA() << std::endl;
+    std::cout << "Result: " << exponentialSeries.FuncA(8) << std::endl;
     return 0;
 }
