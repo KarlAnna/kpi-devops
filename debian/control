@@ -1,0 +1,13 @@
+Source: expseries
+Section: utils
+Priority: optional
+Maintainer: Anna Karlina  karlina.anna@lll.kpi.ua
+Build-Depends: debhelper (>= 9), g++
+Standards-Version: 4.5.0
+Homepage: https://example.com
+
+Package: expseries
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libstdc++6
+Description: Exponential Series Calculator
+ A program to calculate the exponential series e^x.
