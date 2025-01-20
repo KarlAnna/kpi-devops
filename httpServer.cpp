@@ -1,105 +1,100 @@
-#include <iostream>
-#include <vector>
-#include <chrono>
-#include <algorithm>
-#include <cstring>
-#include <unistd.h>
+#include <stdio.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <netinet/in.h>
+#include <string.h>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <chrono>
 #include "ExponentialSeries.h"
 
 #define PORT 8081
 
-const char HTTP_200HEADER[] = "HTTP/1.1 200 OK\r\n";
+// HTTP headers
+const char HTTP_200_HEADER[] = "HTTP/1.1 200 OK\r\n";
+const char HTTP_404_HEADER[] = "HTTP/1.1 404 Not Found\r\n";
 
-int CreateHTTPserver() {
+// Function to create and run the HTTP server
+void CreateHTTPserver() {
     int connectionSocket, clientSocket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
 
-    // Create socket
+    // Creating socket
     if ((connectionSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("Socket creation failed");
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
+    // Configuring server address
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
 
+    // Binding socket to the port
     if (bind(connectionSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        perror("Bind failed");
+        perror("Binding failed");
         close(connectionSocket);
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
+    // Listening for incoming connections
     if (listen(connectionSocket, 10) < 0) {
-        perror("Listen failed");
+        perror("Listening failed");
         close(connectionSocket);
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
-    std::cout << "Server started on port " << PORT << ". Waiting for connections..." << std::endl;
+    printf("\n------ Server is running on port %d ------\n", PORT);
 
     while (true) {
+        printf("\n------ Waiting for a new connection ------\n");
+
+        // Accepting a new connection
         if ((clientSocket = accept(connectionSocket, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
             perror("Accept failed");
             continue;
         }
 
-        // Read HTTP request
         char buffer[30000] = {0};
-        int bytesRead = read(clientSocket, buffer, sizeof(buffer));
-
-        if (bytesRead <= 0) {
-            std::cerr << "Failed to read request or client disconnected." << std::endl;
-            close(clientSocket);
-            continue;
-        }
-
-        // Parse request
-        std::string request(buffer);
-        std::string method = request.substr(0, request.find(' '));
-        std::string path = request.substr(request.find(' ') + 1, request.find(' ', request.find(' ') + 1) - request.find(' ') - 1);
-
-        std::cout << "Method: " << method << ", Path: " << path << std::endl;
+        read(clientSocket, buffer, sizeof(buffer));
+        printf("Request received:\n%s\n", buffer);
 
         // Handle `/compute` endpoint
-        if (method == "GET" && path == "/compute") {
+        if (strstr(buffer, "/compute")) {
             auto start = std::chrono::high_resolution_clock::now();
 
-            // Perform computation
-            std::vector<double> values;
+            // Generate and process data
+            std::vector<double> results;
             ExponentialSeries expSeries;
-            int n = 1000000; // Adjust n to make the computation last ~10 seconds
+            int n = 150000000;// Adjust n to make the computation last ~15 seconds
             for (int i = 0; i < n; ++i) {
-                values.push_back(expSeries.FuncA(i % 10));
+                results.push_back(expSeries.FuncA(i % 10));
             }
-
-            std::sort(values.begin(), values.end());
+            std::sort(results.begin(), results.end());
 
             auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
             // Send response
-            std::string body = std::to_string(duration);
-            std::string response = std::string(HTTP_200HEADER) +
-                                    "Content-Type: text/plain\r\n" +
-                                    "Content-Length: " + std::to_string(body.size()) + "\r\n\r\n" +
-                                    body;
+            std::string body = "Processing took " + std::to_string(elapsed) + " ms\n";
+            std::string response = std::string(HTTP_200_HEADER) +
+                                   "Content-Type: text/plain\r\n" +
+                                   "Content-Length: " + std::to_string(body.size()) + "\r\n\r\n" + body;
 
-            send(clientSocket, response.c_str(), response.size(), 0);
-            std::cout << "Response sent: " << body << " seconds" << std::endl;
+            write(clientSocket, response.c_str(), response.size());
+            printf("\nResponse sent: Time elapsed = %ld ms\n", elapsed);
         } else {
-            // Handle other paths or methods
-            const char *notFoundResponse = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
-            send(clientSocket, notFoundResponse, strlen(notFoundResponse), 0);
-            std::cout << "Response sent: 404 Not Found" << std::endl;
+            // Handling unknown route
+            std::string notFoundResponse = std::string(HTTP_404_HEADER) + "Content-Type: text/plain\r\nContent-Length: 13\r\n\r\n404 Not Found";
+            write(clientSocket, notFoundResponse.c_str(), notFoundResponse.size());
         }
 
+        // Close the connection
         close(clientSocket);
     }
 
     close(connectionSocket);
-    return 0;
 }
